@@ -41,6 +41,18 @@ function doPutIntInt(w,edit){
 	w.put(bin.readInt(edit,5),bin.readInt(edit,9))
 }
 
+function makeEditBufferPutIntLong(code,p1,p2){
+	var b = new Buffer(18)
+	bin.writeInt(b,0,b.length)
+	b[CODE_INDEX] = code
+	bin.writeInt(b,5,p1)
+	bin.writeLong(b,9,p2)
+	return b
+}
+
+function doPutIntLong(w,edit){
+	w.put(bin.readInt(edit,5),bin.readLong(edit,9))
+}
 function StringStringMap(name, cb){
 	var m = this
 	var w = this.w = new primitivemap.StringStringMap()
@@ -88,7 +100,6 @@ IntIntMap.prototype.put = function(key, value){
 	this.c.writeEdit(makeEditBufferPutIntInt(EDIT_PUT,key,value))
 }
 IntIntMap.prototype.get = genericGet
-//IntIntMap.prototype.put = genericPut
 IntIntMap.prototype.close = genericClose
 IntIntMap.prototype.size = genericSize
 
@@ -97,14 +108,17 @@ function IntLongMap(name, cb){
 	var w = this.w = new primitivemap.IntLongMap()
 	this.c = new CommitLog(name, function(edit){
 		if(edit.type === 'put'){
-			w.put(edit.key,edit.value)
+			doPutIntLong(w,edit)
 		}else{
 			throw new Error('unknown edit type: ' + JSON.stringify(edit))
 		}
 	},function(){cb(m);})
 }
+IntLongMap.prototype.put = function(key, value){
+	this.w.put(key, value)
+	this.c.writeEdit(makeEditBufferPutIntLong(EDIT_PUT,key,value))
+}
 IntLongMap.prototype.get = genericGet
-//IntLongMap.prototype.put = genericPut
 IntLongMap.prototype.close = genericClose
 IntLongMap.prototype.size = genericSize
 
