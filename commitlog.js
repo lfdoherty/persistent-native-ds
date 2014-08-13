@@ -102,7 +102,6 @@ function CommitLog(path, editCb, doneCb){
 					})
 					var lastFilename = files[files.length-1]
 					var remaining = files.length
-					//console.log('files: ' + JSON.stringify(files))
 					function readFile(){
 						if(files.length === 0) return
 						var f = files.shift()
@@ -119,13 +118,6 @@ function CommitLog(path, editCb, doneCb){
 								editCb(edit)
 								i += editLen
 							}
-							/*var lines = str.split('\n')
-							lines.forEach(function(line){
-								if(!line) return
-						
-								var json = JSON.parse(line)
-								editCb(json)
-							})*/
 					
 							--remaining
 							if(remaining === 0){
@@ -154,7 +146,6 @@ CommitLog.prototype.flush = function(){
 	}	
 }
 CommitLog.prototype.writeEdit = function(buf){
-	//var buf = new Buffer(JSON.stringify(edit)+'\n')
 	if(this.bufOffset + buf.length <= this.buf.length){
 		buf.copy(this.buf,this.bufOffset)
 		this.bufOffset += buf.length
