@@ -2,7 +2,7 @@
 var primitivemap = require('primitivemap')
 
 var CommitLog = require('./commitlog')
-var bin = require('./bin')
+//var bin = require('./bin')
 
 var EDIT_PUT = 1
 var EDIT_REMOVE = 2
@@ -13,10 +13,13 @@ function makeEditBufferPutStringString(p1,p2){
 	var len1 = Buffer.byteLength(p1)
 	var len2 = Buffer.byteLength(p2)
 	var b = new Buffer(14+len1+len2)
-	bin.writeInt(b,0,b.length)
+	//bin.writeInt(b,0,b.length)
+	b.writeInt32BE(b.length,0)
 	b[CODE_INDEX] = EDIT_PUT
-	bin.writeInt(b,5,len1)
-	bin.writeInt(b,9,len2)
+	//bin.writeInt(b,5,len1)
+	//bin.writeInt(b,9,len2)
+	b.writeInt32BE(len1,5)
+	b.writeInt32BE(len2,9)
 	b.write(p1,13)
 	b.write(p2,13+len1)
 	return b
@@ -24,56 +27,60 @@ function makeEditBufferPutStringString(p1,p2){
 function makeEditBufferRmString(key){
 	var len = Buffer.byteLength(key)
 	var b = new Buffer(9+len)
-	bin.writeInt(b,0,b.length)
+	//bin.writeInt(b,0,b.length)
+	b.writeInt32BE(b.length,0)
 	b[CODE_INDEX] = EDIT_REMOVE
-	bin.writeInt(b,5,len)
+	//bin.writeInt(b,5,len)
+	b.writeInt32BE(len,5)
 	b.write(key,9)
 	return b
 }
 
 function doPutStringString(w,edit){
-	var len1 = bin.readInt(edit,5)
-	var len2 = bin.readInt(edit,9)
+	var len1 = edit.readInt32BE(5)//bin.readInt(edit,5)
+	var len2 = edit.readInt32BE(9)//bin.readInt(edit,9)
 
 	var n2 = 13+len1
 	w.put(edit.toString('utf8',13,n2),edit.toString('utf8',n2,n2+len2))
 }
 function doRmString(w,edit){
-	var len = bin.readInt(edit,5)
+	var len = edit.readInt32BE(5)//bin.readInt(edit,5)
 	w.rm(edit.toString('utf8',9,9+len))
 }
 function makeEditBufferPutIntInt(p1,p2){
 	var b = new Buffer(14)
-	bin.writeInt(b,0,b.length)
+	b.writeInt32BE(b.length,0)
 	b[CODE_INDEX] = EDIT_PUT
-	bin.writeInt(b,5,p1)
-	bin.writeInt(b,9,p2)
+	b.writeInt32BE(p1,5)
+	b.writeInt32BE(p2,9)
 	return b
 }
 function makeEditBufferRmInt(key){
 	var b = new Buffer(9)
-	bin.writeInt(b,0,b.length)
+	//bin.writeInt(b,0,b.length)
+	b.writeInt32BE(b.length,0)
 	b[CODE_INDEX] = EDIT_REMOVE
-	bin.writeInt(b,5,key)
+	//bin.writeInt(b,5,key)
+	b.writeInt32BE(key,5)
 	return b
 }
 function doPutIntInt(w,edit){
-	w.put(bin.readInt(edit,5),bin.readInt(edit,9))
+	w.put(edit.readInt32BE(5),edit.readInt32BE(9))
 }
 function doRmInt(w,edit){
-	w.rm(bin.readInt(edit,5))
+	w.rm(edit.readInt32BE(5))//bin.readInt(edit,5))
 }
-function makeEditBufferPutIntLong(p1,p2){
+function makeEditBufferPutIntDouble(p1,p2){
 	var b = new Buffer(18)
-	bin.writeInt(b,0,b.length)
+	b.writeInt32BE(b.length,0)
 	b[CODE_INDEX] = EDIT_PUT
-	bin.writeInt(b,5,p1)
-	bin.writeLong(b,9,p2)
+	b.writeInt32BE(p1,5)
+	b.writeDoubleBE(p2,9)
 	return b
 }
 
-function doPutIntLong(w,edit){
-	w.put(bin.readInt(edit,5),bin.readLong(edit,9))
+function doPutIntDouble(w,edit){
+	w.put(edit.readInt32BE(5),edit.readDoubleBE(9))
 }
 function StringStringMap(name, cb){
 	var m = this
@@ -112,7 +119,8 @@ function genericSize(){
 }
 
 var clearBuffer = new Buffer(5)
-bin.writeInt(clearBuffer,0,5)
+//bin.writeInt(clearBuffer,0,5)
+clearBuffer.writeInt32BE(5,0)
 clearBuffer[4] = EDIT_CLEAR
 function genericClear(){
 	this.w.clear()
@@ -153,13 +161,13 @@ IntIntMap.prototype.get = genericGet
 IntIntMap.prototype.close = genericClose
 IntIntMap.prototype.size = genericSize
 
-function IntLongMap(name, cb){
+function IntDoubleMap(name, cb){
 	var m = this
-	var w = this.w = new primitivemap.IntLongMap()
+	var w = this.w = new primitivemap.IntDoubleMap()
 	this.c = new CommitLog(name, function(edit){
 		var code = edit[CODE_INDEX]
 		if(code === EDIT_PUT){
-			doPutIntLong(w,edit)
+			doPutIntDouble(w,edit)
 		}else if(code === EDIT_REMOVE){
 			doRmInt(w,edit)
 		}else if(code === EDIT_CLEAR){
@@ -169,18 +177,18 @@ function IntLongMap(name, cb){
 		}
 	},function(){cb(m);})
 }
-IntLongMap.prototype.put = function(key, value){
+IntDoubleMap.prototype.put = function(key, value){
 	this.w.put(key, value)
-	this.c.writeEdit(makeEditBufferPutIntLong(key,value))
+	this.c.writeEdit(makeEditBufferPutIntDouble(key,value))
 }
-IntLongMap.prototype.clear = genericClear
-IntLongMap.prototype.rm = IntIntMap.prototype.rm
-IntLongMap.prototype.get = genericGet
-IntLongMap.prototype.close = genericClose
-IntLongMap.prototype.size = genericSize
+IntDoubleMap.prototype.clear = genericClear
+IntDoubleMap.prototype.rm = IntIntMap.prototype.rm
+IntDoubleMap.prototype.get = genericGet
+IntDoubleMap.prototype.close = genericClose
+IntDoubleMap.prototype.size = genericSize
 
 exports.makeStringStringMap = function(name,cb){return new StringStringMap(name,cb);}
 exports.makeIntIntMap = function(name,cb){return new IntIntMap(name,cb);}
-exports.makeIntLongMap = function(name,cb){return new IntLongMap(name,cb);}
+exports.makeIntDoubleMap = function(name,cb){return new IntDoubleMap(name,cb);}
 
 

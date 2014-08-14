@@ -16,10 +16,7 @@ TODO implement invalidation
 var CHUNK_SIZE = 4*1024*1024
 var BUFFER_SIZE = 4*1024*1024
 
-//var fs = require('fs')
 var fs = require('fs-ext');
-
-var bin = require('./bin')
 
 function zeropad(n,str){
 	str = str+''
@@ -110,7 +107,7 @@ function CommitLog(path, editCb, doneCb){
 					
 							var i = 0
 							while(i+4 < buf.length){
-								var editLen = bin.readInt(buf,i)
+								var editLen = buf.readInt32BE(i)
 								if(i+editLen > buf.length){
 									break
 								}

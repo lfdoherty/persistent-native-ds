@@ -6,7 +6,7 @@
   "author": "Liam Doherty",
   "dependencies": {
     "fs-ext": "^0.3.2",
-    "primitivemap": "0.0.11"
+    "primitivemap": "0.0.12"
   },
   "engines": {
     "node": ">=0.10.0"
