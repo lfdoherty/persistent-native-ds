@@ -1,12 +1,12 @@
 {
   "name": "persistent-native-ds",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Wraps a primitivemap with commit-log persistence to disk.",
   "main": "./persistentds",
   "author": "Liam Doherty",
   "dependencies": {
     "fs-ext": "^0.3.2",
-    "primitivemap": "0.0.12"
+    "primitivemap": "0.0.13"
   },
   "engines": {
     "node": ">=0.10.0"
